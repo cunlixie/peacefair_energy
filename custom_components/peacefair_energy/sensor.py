@@ -267,7 +267,6 @@ class HPGSensor(CoordinatorEntity, HPGBaseSensor):
             for real_type in self._energy_updates:
                 json_data[real_type] = self._energy_updates[real_type](cur_time, self.state)
             save_json(self.hass.config.path(self._record_file), json_data)
-#            await async_save_json(self.hass.config.path(self._record_file), json_data)
 
     @property
     def last_reset(self):
