@@ -1,22 +1,18 @@
+from homeassistant.components.sensor import (
+    SensorDeviceClass
+)
 from homeassistant.const import (
     STATE_UNKNOWN,
-    DEVICE_CLASS_VOLTAGE,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_POWER,
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_POWER_FACTOR,
-    ELECTRIC_POTENTIAL_VOLT,
-    ELECTRIC_CURRENT_AMPERE,
-    POWER_WATT,
-    ENERGY_KILO_WATT_HOUR,
-    FREQUENCY_HERTZ
+    UnitOfElectricPotential,
+    UnitOfElectricCurrent,
+    UnitOfPower,
+    UnitOfEnergy,
+    UnitOfFrequency
 )
-
 from .const import (
     DOMAIN,
     COORDINATOR,
     ENERGY_SENSOR,
-    DEVICE_CLASS_FREQUENCY,
     VERSION,
     STORAGE_PATH
 )
@@ -34,33 +30,33 @@ _LOGGER = logging.getLogger(__name__)
 
 
 HPG_SENSORS = {
-    DEVICE_CLASS_VOLTAGE: {
+    SensorDeviceClass.VOLTAGE: {
         "name": "Voltage",
-        "unit": ELECTRIC_POTENTIAL_VOLT,
+        "unit": UnitOfElectricPotential.VOLT,
         "state_class": "measurement"
     },
-    DEVICE_CLASS_CURRENT: {
+    SensorDeviceClass.CURRENT: {
         "name": "Current",
-        "unit": ELECTRIC_CURRENT_AMPERE,
+        "unit": UnitOfElectricCurrent.AMPERE,
         "state_class": "measurement"
     },
-    DEVICE_CLASS_POWER: {
+    SensorDeviceClass.POWER: {
         "name": "Power",
-        "unit": POWER_WATT,
+        "unit": UnitOfPower.WATT,
         "state_class": "measurement"
     },
-    DEVICE_CLASS_ENERGY: {
+    SensorDeviceClass.ENERGY: {
         "name": "Energy",
-        "unit": ENERGY_KILO_WATT_HOUR,
+        "unit": UnitOfEnergy.KILO_WATT_HOUR,
         "state_class": "total_increasing"
     },
-    DEVICE_CLASS_POWER_FACTOR: {
+    SensorDeviceClass.POWER_FACTOR: {
         "name": "Power Factor",
         "state_class": "measurement"
     },
-    DEVICE_CLASS_FREQUENCY: {
+    SensorDeviceClass.FREQUENCY: {
         "name": "Power Frequency",
-        "unit": FREQUENCY_HERTZ,
+        "unit": UnitOfFrequency.HERTZ,
         "icon": "hass:current-ac",
         "state_class": "measurement"
     },
@@ -92,7 +88,6 @@ HISTORIES = {
 ATTR_LAST_RESET: Final = "last_reset"
 ATTR_STATE_CLASS: Final = "state_class"
 
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = []
     coordinator = hass.data[config_entry.entry_id][COORDINATOR]
@@ -107,7 +102,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if len(json_data) > 0:
             state = json_data[history_type]["history_state"]
         _LOGGER.debug(f"Load {history_type} history data {state}")
-        h_sensor = HPGHistorySensor(history_type, DEVICE_CLASS_ENERGY, ident, state)
+        h_sensor = HPGHistorySensor(history_type, SensorDeviceClass.ENERGY, ident, state)
         sensors.append(h_sensor)
         state = STATE_UNKNOWN
         last_state = STATE_UNKNOWN
@@ -116,7 +111,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             state = json_data[history_type]["real_state"]
             last_state = json_data["last_state"]
             last_time = json_data["last_time"]
-        r_sensor = HPGRealSensor(history_type, DEVICE_CLASS_ENERGY, ident, h_sensor, state, last_state, last_time)
+        r_sensor = HPGRealSensor(history_type, SensorDeviceClass.ENERGY, ident, h_sensor, state, last_state, last_time)
         sensors.append(r_sensor)
         updates[history_type] = r_sensor.update_state
     json_data = load_json(reset_file, default={})
@@ -251,7 +246,7 @@ class HPGSensor(CoordinatorEntity, HPGBaseSensor):
         self._last_reset = datetime.datetime.fromtimestamp(last_reset)
         self._record_file = f"{STORAGE_PATH}/{entry_id}_state.json"
         self._reset_file = f"{STORAGE_PATH}/{entry_id}_reset.json"
-        if self._sensor_type == DEVICE_CLASS_ENERGY:
+        if self._sensor_type == SensorDeviceClass.ENERGY:
             coordinator.set_update(self.update_state)
 
     @property
@@ -272,15 +267,16 @@ class HPGSensor(CoordinatorEntity, HPGBaseSensor):
             for real_type in self._energy_updates:
                 json_data[real_type] = self._energy_updates[real_type](cur_time, self.state)
             save_json(self.hass.config.path(self._record_file), json_data)
+#            await async_save_json(self.hass.config.path(self._record_file), json_data)
 
     @property
     def last_reset(self):
-        return self._last_reset if self._sensor_type == DEVICE_CLASS_ENERGY else None
+        return self._last_reset if self._sensor_type == SensorDeviceClass.ENERGY else None
 
     @final
     @property
     def state_attributes(self):
-        return {ATTR_LAST_RESET: self.last_reset.isoformat()} if self._sensor_type == DEVICE_CLASS_ENERGY else {}
+        return {ATTR_LAST_RESET: self.last_reset.isoformat()} if self._sensor_type == SensorDeviceClass.ENERGY else {}
 
     def reset(self):
         self._last_reset = datetime.datetime.now()
