@@ -22,7 +22,10 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_PORT,
     CONF_SLAVE,
-    DEVICE_CLASS_ENERGY
+)
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass
 )
 
 from homeassistant.const import ATTR_ENTITY_ID
@@ -69,8 +72,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry):
     coordinator = PeacefairCoordinator(hass, protocol, host, port, slave, scan_interval)
     hass.data[config_entry.entry_id][COORDINATOR] = coordinator
     await coordinator.async_config_entry_first_refresh()
-    hass.async_create_task(hass.config_entries.async_forward_entry_setup(
-        config_entry, "sensor"))
+    PLATFORMS = ["sensor"]
+    await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
     hass.data[config_entry.entry_id][UN_SUBDISCRIPT] = config_entry.add_update_listener(update_listener)
 
     def service_handle(service):
@@ -105,7 +108,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry):
     host = config_entry.data[CONF_HOST]
     host = host.replace(".", "_")
     energy_sensor = next(
-        (sensor for sensor in hass.data[DOMAIN][ENERGY_SENSOR] if sensor.entity_id == f"{host}_{DEVICE_CLASS_ENERGY}"),
+        (sensor for sensor in hass.data[DOMAIN][ENERGY_SENSOR] if sensor.entity_id == f"{host}_{SensorDeviceClass.ENERGY}"),
         None,
     )
     if energy_sensor is not None:
@@ -145,7 +148,7 @@ class PeacefairCoordinator(DataUpdateCoordinator):
 
     def reset_energy(self):
         self._hub.reset_energy()
-        self.data[DEVICE_CLASS_ENERGY] = 0.0
+        self.data[SensorDeviceClass.ENERGY] = 0.0
 
     def set_update(self, update):
         self._updates = update
