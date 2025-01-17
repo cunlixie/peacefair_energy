@@ -5,30 +5,24 @@ from pymodbus.pdu import ModbusRequest
 import threading
 try:
     from homeassistant.const import (
-        DEVICE_CLASS_VOLTAGE ,
-        DEVICE_CLASS_CURRENT,
-        DEVICE_CLASS_POWER,
-        DEVICE_CLASS_ENERGY,
-        DEVICE_CLASS_POWER_FACTOR
+        SensorDeviceClass
     )
-except ImportError:
-    DEVICE_CLASS_VOLTAGE = "voltage"
-    DEVICE_CLASS_CURRENT = "current"
-    DEVICE_CLASS_POWER = "power"
-    DEVICE_CLASS_ENERGY = "energy"
-    DEVICE_CLASS_POWER_FACTOR = "power_factor"
 
-from .const import(
-    DEVICE_CLASS_FREQUENCY
-)
+except ImportError:
+    SensorDeviceClass.VOLTAGE = "voltage"
+    SensorDeviceClass.CURRENT = "current"
+    SensorDeviceClass.POWER = "power"
+    SensorDeviceClass.ENERGY = "energy"
+    SensorDeviceClass.POWER_FACTOR = "power_factor"
+    SensorDeviceClass.FREQUENCY = "Power Frequency"
 
 HPG_SENSOR_TYPES = [
-    DEVICE_CLASS_VOLTAGE ,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_POWER,
-    DEVICE_CLASS_ENERGY ,
-    DEVICE_CLASS_POWER_FACTOR,
-    DEVICE_CLASS_FREQUENCY
+    SensorDeviceClass.VOLTAGE ,
+    SensorDeviceClass.CURRENT,
+    SensorDeviceClass.POWER,
+    SensorDeviceClass.ENERGY,
+    SensorDeviceClass.POWER_FACTOR,
+    SensorDeviceClass.FREQUENCY
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -99,12 +93,12 @@ class ModbusHub:
             result = self.read_input_registers(0, 9)
             if result is not None and type(result) is not ModbusIOException \
                     and result.registers is not None and len(result.registers) == 9:
-                data[DEVICE_CLASS_VOLTAGE] = result.registers[0] / 10
-                data[DEVICE_CLASS_CURRENT] = ((result.registers[2] << 16) + result.registers[1]) / 1000
-                data[DEVICE_CLASS_POWER] = ((result.registers[4] << 16) + result.registers[3]) / 10
-                data[DEVICE_CLASS_ENERGY] = ((result.registers[6] << 16) + result.registers[5]) / 1000
-                data[DEVICE_CLASS_FREQUENCY] = result.registers[7] / 10
-                data[DEVICE_CLASS_POWER_FACTOR] = result.registers[8] / 100
+                data[SensorDeviceClass.VOLTAGE] = result.registers[0] / 10
+                data[SensorDeviceClass.CURRENT] = ((result.registers[2] << 16) + result.registers[1]) / 1000
+                data[SensorDeviceClass.POWER] = ((result.registers[4] << 16) + result.registers[3]) / 10
+                data[SensorDeviceClass.ENERGY] = ((result.registers[6] << 16) + result.registers[5]) / 1000
+                data[SensorDeviceClass.FREQUENCY] = result.registers[7] / 10
+                data[SensorDeviceClass.POWER_FACTOR] = result.registers[8] / 100
             else:
                 _LOGGER.debug(f"Error in gathering, timed out")
         except Exception as e:
