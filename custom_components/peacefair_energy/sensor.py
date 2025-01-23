@@ -25,6 +25,9 @@ import time
 import logging
 import os
 import datetime
+import aiofiles
+import json
+# import homeassistant.helpers.executor as executor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +91,8 @@ HISTORIES = {
 ATTR_LAST_RESET: Final = "last_reset"
 ATTR_STATE_CLASS: Final = "state_class"
 
+ 
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = []
     coordinator = hass.data[config_entry.entry_id][COORDINATOR]
@@ -96,7 +101,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     os.makedirs(hass.config.path(STORAGE_PATH), exist_ok=True)
     record_file = hass.config.path(f"{STORAGE_PATH}/{config_entry.entry_id}_state.json")
     reset_file = hass.config.path(f"{STORAGE_PATH}/{DOMAIN}_reset.json")
-    json_data = load_json(record_file, default={})
+    async with aiofiles.open(record_file, mode="rb") as fdesc:
+        json_data = json.loads(await fdesc.read()) 
+#    json_data = await executor.run_in_executor(hass.loop, load_json, record_file, default={})        
+#    json_data = load_json(record_file, default={})
     for history_type in HISTORIES.keys():
         state = STATE_UNKNOWN
         if len(json_data) > 0:
@@ -267,7 +275,6 @@ class HPGSensor(CoordinatorEntity, HPGBaseSensor):
             for real_type in self._energy_updates:
                 json_data[real_type] = self._energy_updates[real_type](cur_time, self.state)
             save_json(self.hass.config.path(self._record_file), json_data)
-#            await async_save_json(self.hass.config.path(self._record_file), json_data)
 
     @property
     def last_reset(self):
