@@ -4,7 +4,7 @@ from pymodbus.transaction import ModbusRtuFramer, ModbusIOException
 from pymodbus.pdu import ModbusRequest
 import threading
 try:
-    from homeassistant.const import (
+    from homeassistant.components.sensor import (
         SensorDeviceClass
     )
 
