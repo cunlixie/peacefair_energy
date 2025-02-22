@@ -19,6 +19,7 @@ from .const import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import Entity
 from homeassistant.util.json import load_json
+import asyncio
 from homeassistant.helpers.json import save_json
 from typing import final, Final
 import time
@@ -27,7 +28,6 @@ import os
 import datetime
 import aiofiles
 import json
-# import homeassistant.helpers.executor as executor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -123,6 +123,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         sensors.append(r_sensor)
         updates[history_type] = r_sensor.update_state
     json_data = load_json(reset_file, default={})
+#    async with aiofiles.open(reset_file, mode="r") as fdesc:
+#        json_data = json.loads(await fdesc.read())
+#    json_data = await asyncio.to_thread(load_json, reset_file, {})
     if len(json_data) > 0:
         last_reset = json_data.get("last_reset")
     else:
