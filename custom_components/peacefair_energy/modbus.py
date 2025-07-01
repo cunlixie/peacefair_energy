@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from pymodbus.client import ModbusTcpClient, ModbusUdpClient
 from pymodbus.transaction import ModbusRtuFramer, ModbusIOException
 from pymodbus.pdu import ModbusRequest
@@ -73,24 +74,36 @@ class ModbusHub:
         with self._lock:
             self._client.close()
 
-    def read_holding_register(self):
-        pass
+#    def read_holding_register(self):
+#        pass
 
-    def read_input_registers(self, address, count):
+    # 新增同步版本，供线程池调用
+    def read_input_registers_sync(self, address, count):
         with self._lock:
             kwargs = {"slave": self._slave}
             return self._client.read_input_registers(address, count, **kwargs)
 
+    # 异步版本，交给线程池执行，避免阻塞事件循环
+    async def read_input_registers(self, address, count):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self.read_input_registers_sync,
+            address,
+            count
+        )
+    
     def reset_energy(self):
         with self._lock:
             kwargs = {"slave": self._slave}
             request = ModbusResetEnergyRequest(**kwargs)
             self._client.execute(request)
 
-    def info_gather(self):
+    # 异步版本info_gather
+    async def info_gather(self):
         data = {}
         try:
-            result = self.read_input_registers(0, 9)
+            result = await self.read_input_registers(0, 9)
             if result is not None and type(result) is not ModbusIOException \
                     and result.registers is not None and len(result.registers) == 9:
                 data[SensorDeviceClass.VOLTAGE] = result.registers[0] / 10
@@ -104,3 +117,5 @@ class ModbusHub:
         except Exception as e:
             _LOGGER.error(f"Error in gathering, {e}")
         return data
+    
+    # 如果有别的同步读写函数，也建议用类似方式异步包装

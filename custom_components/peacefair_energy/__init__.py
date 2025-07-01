@@ -155,7 +155,7 @@ class PeacefairCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         data = self.data if self.data is not None else {}
-        data_update = self._hub.info_gather()
+        data_update = await self._hub.info_gather()
         if len(data_update) > 0:
             data = data_update
             _LOGGER.debug(f"Got Data {data}")
