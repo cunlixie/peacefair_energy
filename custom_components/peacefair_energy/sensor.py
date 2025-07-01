@@ -19,12 +19,15 @@ from .const import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import Entity
 from homeassistant.util.json import load_json
+import asyncio
 from homeassistant.helpers.json import save_json
 from typing import final, Final
 import time
 import logging
 import os
 import datetime
+import aiofiles
+import json
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +91,15 @@ HISTORIES = {
 ATTR_LAST_RESET: Final = "last_reset"
 ATTR_STATE_CLASS: Final = "state_class"
 
+async def async_load_json(hass, filepath, default=None):
+    """Load a JSON file."""
+    try:
+        async with aiofiles.open(filepath, mode='r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        _LOGGER.error(f"Unable to load {filepath}")
+        return default
+
 async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = []
     coordinator = hass.data[config_entry.entry_id][COORDINATOR]
@@ -96,7 +108,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     os.makedirs(hass.config.path(STORAGE_PATH), exist_ok=True)
     record_file = hass.config.path(f"{STORAGE_PATH}/{config_entry.entry_id}_state.json")
     reset_file = hass.config.path(f"{STORAGE_PATH}/{DOMAIN}_reset.json")
-    json_data = load_json(record_file, default={})
+#    json_data = load_json(record_file, default={})
+    async with aiofiles.open(record_file, mode="rb") as fdesc:
+        json_data = json.loads(await fdesc.read())
     for history_type in HISTORIES.keys():
         state = STATE_UNKNOWN
         if len(json_data) > 0:
@@ -114,7 +128,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         r_sensor = HPGRealSensor(history_type, SensorDeviceClass.ENERGY, ident, h_sensor, state, last_state, last_time)
         sensors.append(r_sensor)
         updates[history_type] = r_sensor.update_state
-    json_data = load_json(reset_file, default={})
+#    json_data = load_json(reset_file, default={})
+    json_data = await asyncio.to_thread(load_json, reset_file, {})
     if len(json_data) > 0:
         last_reset = json_data.get("last_reset")
     else:
