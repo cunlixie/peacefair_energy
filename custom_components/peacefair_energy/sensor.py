@@ -108,7 +108,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     os.makedirs(hass.config.path(STORAGE_PATH), exist_ok=True)
     record_file = hass.config.path(f"{STORAGE_PATH}/{config_entry.entry_id}_state.json")
     reset_file = hass.config.path(f"{STORAGE_PATH}/{DOMAIN}_reset.json")
-#    json_data = load_json(record_file, default={})
     async with aiofiles.open(record_file, mode="rb") as fdesc:
         json_data = json.loads(await fdesc.read())
     for history_type in HISTORIES.keys():
@@ -128,7 +127,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         r_sensor = HPGRealSensor(history_type, SensorDeviceClass.ENERGY, ident, h_sensor, state, last_state, last_time)
         sensors.append(r_sensor)
         updates[history_type] = r_sensor.update_state
-#    json_data = load_json(reset_file, default={})
     json_data = await asyncio.to_thread(load_json, reset_file, {})
     if len(json_data) > 0:
         last_reset = json_data.get("last_reset")
