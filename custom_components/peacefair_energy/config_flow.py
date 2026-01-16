@@ -52,14 +52,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry):
-        self.config_entry = config_entry
+        self._config_entryconfig_entry = config_entry
 
     async def async_step_init(self, user_input=None):
 
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        scan_interval = self.config_entry.options.get(
+        scan_interval = self._config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
 
