@@ -109,7 +109,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     record_file = hass.config.path(f"{STORAGE_PATH}/{config_entry.entry_id}_state.json")
     reset_file = hass.config.path(f"{STORAGE_PATH}/{DOMAIN}_reset.json")
     async with aiofiles.open(record_file, mode="rb") as fdesc:
-#        json_data = json.loads(await fdesc.read())
         content = await fdesc.read()
         if not content:
             json_data = {}
